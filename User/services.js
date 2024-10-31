@@ -189,6 +189,51 @@ const getAllSupervisors = async () => {
 	}
 };
 
+const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
+	try {
+		// Find the role IDs for 'Worker' and 'Supervisor'
+		const workerRole = await Role.findOne({ name: 'Worker' });
+		const supervisorRole = await Role.findOne({ name: 'Supervisor' });
+
+		if (!workerRole) throw new Error('Worker role not found');
+		if (!supervisorRole) throw new Error('Supervisor role not found');
+
+		// Calculate the skip value for pagination
+		const skip = (page - 1) * limit;
+
+		// Find users with either the Supervisor or Worker role, with pagination
+		const users = await User.find({
+			role: { $in: [supervisorRole._id, workerRole._id] },
+		})
+			.skip(skip)
+			.limit(limit)
+			.lean();
+
+		for (const user of users) {
+			const role = user.role.toString() === supervisorRole._id.toString() ? supervisorRole : workerRole;
+			user.role = role.name;
+			user.permissions = role.permissions;
+			delete user.password_hash;
+		}
+
+		// Get the total count for pagination info
+		const totalUsers = await User.countDocuments({
+			role: { $in: [supervisorRole._id, workerRole._id] },
+		});
+
+		const totalPages = Math.ceil(totalUsers / limit);
+
+		return {
+			users,
+			totalUsers,
+			totalPages,
+			currentPage: page,
+		};
+	} catch (error) {
+		throw new Error(`Error retrieving supervisors and workers: ${error.message}`);
+	}
+};
+
 // Export all the functions so they can be used in other parts of the application
 module.exports = {
 	createUser,
@@ -198,5 +243,6 @@ module.exports = {
 	updateUserById,
 	deleteUserById,
 	getAllWorkers,
-	getAllSupervisors
+	getAllSupervisors,
+	getAllSupervisorsAndWorkers,
 };

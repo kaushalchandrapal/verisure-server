@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { query } = require('express-validator');
+const { query, body } = require('express-validator');
 const userControllers = require('./controllers');
 const authMiddleware = require('../Auth/middleware');
 const { requirePermission } = require('../Role/middleware');
@@ -65,14 +65,25 @@ router.get(
 	authMiddleware.auth,
 	requirePermission(PERMISSIONS.GET_SUPERVISORS),
 	userControllers.getAllSupervisors
+
 );
 
 /**
- * Route to check if a user exists by username
- * GET /api/user/workers-supervisors
+ * Route to get a paginated list of workers and supervisors
+ * POST /api/user/workers-supervisors
  */
-router.get(
+router.post(
 	'/workers-supervisors',
+	[
+		body('page')
+			.optional()
+			.isInt({ min: 1 })
+			.withMessage('Page must be a positive integer'),
+		body('limit')
+			.optional()
+			.isInt({ min: 1 })
+			.withMessage('Limit must be a positive integer'),
+	],
 	authMiddleware.auth,
 	requirePermission(PERMISSIONS.GET_SUPERVISORS),
 	userControllers.getAllWorkersAndSupervisors

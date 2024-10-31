@@ -196,16 +196,19 @@ const getAllWorkersAndSupervisors = async (req, res) => {
 		return res.status(400).json({ errors: errors.array() });
 	}
 
+	// Get page and limit from request body with default values
+	const page = parseInt(req.page, 10) || 1;
+	const limit = parseInt(req.limit, 10) || 10;
+
 	try {
-		// Retrieve both workers and supervisors using the user service
-		const workers = await userServices.getAllWorkers();
-		const supervisors = await userServices.getAllSupervisors();
+		// Retrieve both workers and supervisors with pagination using the user service
+		const { users, totalUsers, totalPages, currentPage } = await userServices.getAllSupervisorsAndWorkers(page, limit);
 
 		return res.status(200).json({
-			workersAndSupervisors: [
-				...workers,
-				...supervisors,
-			],
+			workersAndSupervisors: users,
+			totalUsers,
+			totalPages,
+			currentPage,
 		});
 	} catch (error) {
 		// Log the error and return a 500 status code for any server-side errors
@@ -213,6 +216,7 @@ const getAllWorkersAndSupervisors = async (req, res) => {
 		return res.status(500).json({ error: 'Internal server error.' });
 	}
 };
+
 
 module.exports = {
 	doesEmailExist,
