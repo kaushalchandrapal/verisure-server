@@ -13,6 +13,10 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 
+app.get('/', (req, res) => {
+	res.send({ message: 'Hello API' });
+});
+
 (async () => {
 	try {
 		// connect database
