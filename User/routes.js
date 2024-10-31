@@ -67,4 +67,15 @@ router.get(
 	userControllers.getAllSupervisors
 );
 
+/**
+ * Route to check if a user exists by username
+ * GET /api/user/workers-supervisors
+ */
+router.get(
+	'/workers-supervisors',
+	authMiddleware.auth,
+	requirePermission(PERMISSIONS.GET_SUPERVISORS),
+	userControllers.getAllWorkersAndSupervisors
+);
+
 module.exports = router;

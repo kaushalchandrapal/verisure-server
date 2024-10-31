@@ -98,10 +98,19 @@ const getUserRolesByUserId = async (userId) => {
 	}
 };
 
+const getAllRoles = async () => {
+  try {
+    return await Role.find();
+  } catch (error) {
+    throw new Error(`Error retrieving roles: ${error.message}`);
+  }
+};
+
 
 module.exports = {
 	createRole,
 	addPermissions,
 	getRoleByName,
 	getUserRolesByUserId,
+  getAllRoles,
 };

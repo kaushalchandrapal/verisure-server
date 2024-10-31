@@ -5,7 +5,7 @@
  */
 const requirePermission = (requiredPermission) => {
 	return (req, res, next) => {
-		// Ensure user and permissions exist in req object
+		// Ensure user and permissions exist in req object		
 		if (!req.user || !req.user.permissions) {
 			return res
 				.status(403)
