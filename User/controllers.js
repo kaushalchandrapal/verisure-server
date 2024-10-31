@@ -189,32 +189,30 @@ const getAllSupervisors = async (req, res) => {
 };
 
 const getAllWorkersAndSupervisors = async (req, res) => {
-	// Validate the request data for errors (assuming express-validator is used)
-	const errors = validationResult(req);
-	if (!errors.isEmpty()) {
-		// If there are validation errors, return a 400 status code and the list of errors
-		return res.status(400).json({ errors: errors.array() });
-	}
+  // Validate the request data for errors (assuming express-validator is used)
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
-	// Get page and limit from request body with default values
-	const page = parseInt(req.page, 10) || 1;
-	const limit = parseInt(req.limit, 10) || 10;
+  // Get page and limit from query parameters, with default values
+  const page = parseInt(req.body.page, 10) || 1;
+  const limit = parseInt(req.body.limit, 10) || 10;
 
-	try {
-		// Retrieve both workers and supervisors with pagination using the user service
-		const { users, totalUsers, totalPages, currentPage } = await userServices.getAllSupervisorsAndWorkers(page, limit);
+  try {
+    // Retrieve workers and supervisors with pagination using the user service
+    const { users, totalUsers, totalPages, currentPage } = await userServices.getAllSupervisorsAndWorkers(page, limit);
 
-		return res.status(200).json({
-			workersAndSupervisors: users,
-			totalUsers,
-			totalPages,
-			currentPage,
-		});
-	} catch (error) {
-		// Log the error and return a 500 status code for any server-side errors
-		console.error('Error in getting workers and supervisors:', error);
-		return res.status(500).json({ error: 'Internal server error.' });
-	}
+    return res.status(200).json({
+      workersAndSupervisors: users,
+      totalUsers,
+      totalPages,
+      currentPage,
+    });
+  } catch (error) {
+    console.error('Error in getting workers and supervisors:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
 };
 
 
