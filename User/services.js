@@ -228,11 +228,14 @@ const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
 			totalUsers,
 			totalPages,
 			currentPage: page,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
 		};
 	} catch (error) {
 		throw new Error(`Error retrieving supervisors and workers: ${error.message}`);
 	}
 };
+
 
 // Export all the functions so they can be used in other parts of the application
 module.exports = {

@@ -233,6 +233,60 @@ const createAdmin = async (username, email, password) => {
 	}
 };
 
+/**
+ * Retrieves a role by name
+ *
+ * @param {String} roleName - The name of the role to retrieve
+ * @returns {Object|null} The role document if found, or null if the role doesn't exist
+ */
+const getRoleByName = async (roleName) => {
+	try {
+		const role = await Role.findOne({ name: roleName });
+		if (!role) throw new Error('Role not found');
+		return role;
+	} catch (error) {
+		throw new Error(`Error retrieving role: ${error.message}`);
+	}
+};
+
+/**
+ * Creates a new user in the database
+ *
+ * @param {Object} userData - The user data, including email, password, username, and role
+ * @returns {Object} The created user object, without the password hash
+ */
+const createUserFromAdmin = async (userData) => {
+	try {
+		// Fetch role by name from the userData payload
+		const role = await roleServices.getRoleByName(userData.role);
+		if (!role) {
+			throw new Error('Role does not exist');
+		}
+
+		// Hash the password before storing the user in the database
+		const hashedPassword = await createHash(userData.password);
+
+		// Create a new user object with the hashed password and role ID
+		const newUser = {
+			email: userData.email,
+			passwordHash: hashedPassword,
+			username: userData.username,
+			role: role._id, // Store the role ID here
+		};
+
+		// Store the new user in the database using the user service
+		const createdUser = await userService.createUser(newUser);
+
+		// Remove the password hash from the created user object before returning it
+		delete createdUser.password_hash;
+
+		return createdUser; // Return the created user without the password hash
+	} catch (error) {
+		// Catch and rethrow any error encountered during user creation
+		throw new Error(error.message || 'Error in creating user.');
+	}
+};
+
 module.exports = {
 	createUser,
 	validateUser,
@@ -240,5 +294,7 @@ module.exports = {
 	verifyJWTToken,
 	sendEmailVerificationEmail,
 	verifyUserEmail,
-	createAdmin
+	createAdmin,
+	createUserFromAdmin,
+	getRoleByName,
 };
