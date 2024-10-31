@@ -85,8 +85,25 @@ const verifyEmail = async (req, res) => {
 	}
 };
 
+/**
+ * Controller to create a new user
+ */
+const createUserController = async (req, res) => {
+	try {
+		const userResponse = await authService.createUserFromAdmin(req.body);
+		res.status(201).json({
+			message: 'User created successfully',
+			user: userResponse,
+		});
+	} catch (error) {
+		console.error('Error creating user:', error);
+		res.status(500).json({ message: 'Failed to create user', error: error.message });
+	}
+};
+
 module.exports = {
 	signup,
 	login,
 	verifyEmail,
+	createUserController,
 };

@@ -123,4 +123,35 @@ router.get(
 	authController.verifyEmail
 );
 
+router.post(
+	'/create-new-user',
+	[
+		body('email')
+			.isEmail()
+			.withMessage('Please provide a valid email')
+			.normalizeEmail(),
+		body('password')
+			.isLength({ min: 7 })
+			.withMessage('Password must be at least 7 characters'),
+		body('username')
+			.not()
+			.isEmpty()
+			.withMessage('Username is required')
+			.trim()
+			.escape(),
+		body('role')
+			.not()
+			.isEmpty()
+			.withMessage('Role is required')
+			.trim()
+			.escape(),
+	],
+	// Validate user is authenticated
+	authMiddlewares.auth,
+	// Validate user has required permission
+	roleMiddlewares.requirePermission(PERMISSIONS.CREATE_WORKER),
+	roleMiddlewares.requirePermission(PERMISSIONS.CREATE_SUPERVISOR),
+	authController.createUserController
+);
+
 module.exports = router;
