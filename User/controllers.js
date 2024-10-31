@@ -188,10 +188,37 @@ const getAllSupervisors = async (req, res) => {
 	}
 };
 
+const getAllWorkersAndSupervisors = async (req, res) => {
+	// Validate the request data for errors (assuming express-validator is used)
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		// If there are validation errors, return a 400 status code and the list of errors
+		return res.status(400).json({ errors: errors.array() });
+	}
+
+	try {
+		// Retrieve both workers and supervisors using the user service
+		const workers = await userServices.getAllWorkers();
+		const supervisors = await userServices.getAllSupervisors();
+
+		return res.status(200).json({
+			workersAndSupervisors: [
+				...workers,
+				...supervisors,
+			],
+		});
+	} catch (error) {
+		// Log the error and return a 500 status code for any server-side errors
+		console.error('Error in getting workers and supervisors:', error);
+		return res.status(500).json({ error: 'Internal server error.' });
+	}
+};
+
 module.exports = {
 	doesEmailExist,
 	doesUsernameExist,
 	getUserInformation,
 	getAllWorkers,
-	getAllSupervisors
+	getAllSupervisors,
+	getAllWorkersAndSupervisors,
 };
