@@ -191,6 +191,10 @@ const getAllSupervisors = async () => {
 
 const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
 	try {
+
+		console.log(limit);
+		
+
 		// Find the role IDs for 'Worker' and 'Supervisor'
 		const workerRole = await Role.findOne({ name: 'Worker' });
 		const supervisorRole = await Role.findOne({ name: 'Supervisor' });
@@ -235,6 +239,7 @@ const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
 		throw new Error(`Error retrieving supervisors and workers: ${error.message}`);
 	}
 };
+
 
 
 // Export all the functions so they can be used in other parts of the application
