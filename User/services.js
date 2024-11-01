@@ -191,10 +191,6 @@ const getAllSupervisors = async () => {
 
 const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
 	try {
-
-		console.log(limit);
-		
-
 		// Find the role IDs for 'Worker' and 'Supervisor'
 		const workerRole = await Role.findOne({ name: 'Worker' });
 		const supervisorRole = await Role.findOne({ name: 'Supervisor' });
