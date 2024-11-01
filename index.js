@@ -5,6 +5,7 @@ const dbHelper = require('./db/connect');
 const userRoutes = require('./User/routes');
 const authRoutes = require('./Auth/routes');
 const rolesRoutes = require('./Role/routes');
+const kycRoutes = require('./kyc/routes');
 const { addPermissions } = require('./Role/services');
 const PERMISSIONS = require('./constants/permissions');
 const port = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/role', rolesRoutes);
+app.use('/api/kyc', kycRoutes);
 
 app.get('/', (req, res) => {
 	res.send({ message: 'Hello API' });
