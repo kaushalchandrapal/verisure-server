@@ -135,12 +135,14 @@ const validateUser = async (userData) => {
 		// Remove the password hash from the user object
 		delete user.password_hash;
 
+		const roleOfUser = await roleServices.getUserRolesByUserId(user._id);
+		
 		// Generate a JWT token with the user data
 		const token = await generateJWTToken({
 			id: user._id,
 			email: user.email,
 			username: user.username,
-			role: user?.role?.name || 'Applicant',
+			role: roleOfUser?.name || 'Applicant',
 		});
 
 		// Return the token and user information (without the password)
