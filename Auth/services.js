@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt'); // Import bcrypt for password hashing and comp
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken for generating and verifying JWT tokens
 const userService = require('../User/services'); // Import user service for database operations
 const emailService = require('../Email/services'); // Import email service for database operations
+const roleServices = require('../Role/services'); // Import email service for database operations
 
 /**
  * Creates a hashed password using bcrypt.
@@ -257,11 +258,6 @@ const getRoleByName = async (roleName) => {
  */
 const createUserFromAdmin = async (userData) => {
 	try {
-		// Fetch role by name from the userData payload
-		const role = await roleServices.getRoleByName(userData.role);
-		if (!role) {
-			throw new Error('Role does not exist');
-		}
 
 		// Hash the password before storing the user in the database
 		const hashedPassword = await createHash(userData.password);
@@ -271,7 +267,7 @@ const createUserFromAdmin = async (userData) => {
 			email: userData.email,
 			passwordHash: hashedPassword,
 			username: userData.username,
-			role: role._id, // Store the role ID here
+			role: userData.role, // Store the role ID here
 		};
 
 		// Store the new user in the database using the user service

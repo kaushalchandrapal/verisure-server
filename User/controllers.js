@@ -201,13 +201,15 @@ const getAllWorkersAndSupervisors = async (req, res) => {
 
   try {
     // Retrieve workers and supervisors with pagination using the user service
-    const { users, totalUsers, totalPages, currentPage } = await userServices.getAllSupervisorsAndWorkers(page, limit);
+    const { users, totalUsers, totalPages, currentPage, hasNextPage, hasPrevPage, } = await userServices.getAllSupervisorsAndWorkers(page, limit);
 
     return res.status(200).json({
       workersAndSupervisors: users,
       totalUsers,
       totalPages,
       currentPage,
+			hasNextPage,
+			hasPrevPage,
     });
   } catch (error) {
     console.error('Error in getting workers and supervisors:', error);
