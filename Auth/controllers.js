@@ -89,7 +89,7 @@ const verifyEmail = async (req, res) => {
  * Controller to create a new user
  */
 const createUserController = async (req, res) => {
-	try {
+	try {		
 		const userResponse = await authService.createUserFromAdmin(req.body);
 		res.status(201).json({
 			message: 'User created successfully',

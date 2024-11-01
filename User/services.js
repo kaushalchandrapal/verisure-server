@@ -9,7 +9,7 @@ const roleServices = require('../Role/services');
  * @returns {Object} The newly created user document or an error if the process fails.
  */
 const createUser = async (userData) => {
-	try {
+	try {		
 		const role = await roleServices.getRoleByName(userData.role);
 		if (!role) {
 			throw new Error('Role does not exist');
