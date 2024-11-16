@@ -6,6 +6,7 @@ const userRoutes = require('./User/routes');
 const authRoutes = require('./Auth/routes');
 const rolesRoutes = require('./Role/routes');
 const kycRoutes = require('./kyc/routes');
+const awsRoutes = require('./Aws/routes');
 const { addPermissions } = require('./Role/services');
 const PERMISSIONS = require('./constants/permissions');
 const port = process.env.PORT || 3000;
@@ -16,6 +17,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/role', rolesRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api/aws', awsRoutes);
 
 app.get('/', (req, res) => {
 	res.send({ message: 'Hello API' });
@@ -31,7 +33,7 @@ app.get('/', (req, res) => {
 		app.listen(port, () => {
 			console.log(`Server is running at port ${port}`);
 
-			// addPermissions("Admin", [PERMISSIONS.GET_WORKERS, PERMISSIONS.GET_SUPERVISORS])
+			// addPermissions("Worker", [PERMISSIONS.VERIFY_KYC])
 		});
 	} catch (error) {
 		console.log(error);
