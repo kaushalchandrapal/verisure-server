@@ -3,6 +3,7 @@ const { body, query } = require('express-validator');
 const authController = require('./controllers');
 const authMiddlewares = require('./middleware');
 const roleMiddlewares = require('../Role/middleware');
+const roleServices = require('../Role/services');
 const PERMISSIONS = require('../constants/permissions');
 
 const router = express.Router();
@@ -25,6 +26,33 @@ router.post(
 			.not()
 			.isEmpty()
 			.withMessage('Username is required')
+			.trim()
+			.escape(),
+		body('first_name')
+			.not()
+			.isEmpty()
+			.withMessage('First name is required')
+			.trim()
+			.escape(),
+		body('last_name')
+			.not()
+			.isEmpty()
+			.withMessage('Last name is required')
+			.trim()
+			.escape(),
+		body('birthdate')
+			.isDate()
+			.withMessage('Birthdate must be a valid date')
+			.custom((value) => {
+				if (new Date(value) >= new Date()) {
+					throw new Error('Birthdate must be earlier than today');
+				}
+				return true;
+			}),
+		body('address')
+			.not()
+			.isEmpty()
+			.withMessage('Address is required')
 			.trim()
 			.escape(),
 	],
@@ -109,6 +137,20 @@ router.post(
 			.withMessage('Please provide a valid email')
 			.normalizeEmail(),
 		body('password').not().isEmpty().withMessage('Password is required'),
+		body('role')
+			.not()
+			.isEmpty()
+			.withMessage('Role is required')
+			.custom(async (value) => {
+				const roleObjs = await roleServices.getAllRoles();
+				const roles = roleObjs.map((role) => role.name);
+				if (!roles.includes(value)) {
+					throw new Error(
+						`Role must be one of the following: ${roles.join(', ')}`
+					);
+				}
+				return true;
+			}),
 	],
 	authController.login // Call the login controller function
 );

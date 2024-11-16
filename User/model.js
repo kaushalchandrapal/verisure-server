@@ -28,9 +28,24 @@ const userSchema = new mongoose.Schema(
 			ref: 'Role',
 			required: true,
 		},
+		first_name: {
+			type: String,
+			trim: true,
+		},
+		last_name: {
+			type: String,
+			trim: true,
+		},
+		birthdate: {
+			type: Date,
+		},
+		address: {
+			type: String,
+			trim: true,
+		},
 	},
 	{
-		// add automatic timestamps to the schema
+		// Add automatic timestamps to the schema
 		timestamps: { created_at: 'created_at', updated_at: 'updated_at' },
 	}
 );
