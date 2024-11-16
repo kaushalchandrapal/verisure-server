@@ -136,7 +136,7 @@ const validateUser = async (userData) => {
 		delete user.password_hash;
 
 		const roleOfUser = await roleServices.getUserRolesByUserId(user._id);
-		
+
 		// Generate a JWT token with the user data
 		const token = await generateJWTToken({
 			id: user._id,
@@ -150,6 +150,7 @@ const validateUser = async (userData) => {
 			isValid: true,
 			token,
 			message: 'User authenticated successfully',
+			role: roleOfUser?.name,
 		};
 	} catch (error) {
 		// Catch and rethrow any error encountered during validation
@@ -228,7 +229,7 @@ const createAdmin = async (username, email, password) => {
 			username,
 			role: 'Admin',
 		};
-		
+
 		const adminUser = await createUser(adminUserData);
 		return adminUser;
 	} catch (error) {
@@ -260,7 +261,6 @@ const getRoleByName = async (roleName) => {
  */
 const createUserFromAdmin = async (userData) => {
 	try {
-
 		// Hash the password before storing the user in the database
 		const hashedPassword = await createHash(userData.password);
 

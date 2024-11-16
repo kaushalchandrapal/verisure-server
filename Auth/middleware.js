@@ -24,7 +24,7 @@ const auth = async (req, res, next) => {
 		const permissions = new Set(roleObj?.permissions || []);
 
 		// Attach user details from the token to the request object
-		req.user = { ...decoded, permissions };
+		req.user = { ...decoded, role: roleObj?.name, permissions };
 
 		// Call the next middleware or route handler
 		next();

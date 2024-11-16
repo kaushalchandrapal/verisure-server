@@ -42,13 +42,16 @@ const login = async (req, res) => {
 
 	try {
 		// Call the auth service to validate the user and get a token
-		const { isValid, token, message } = await authService.validateUser(
-			req.body
-		);
+		const { isValid, token, message, role } =
+			await authService.validateUser(req.body);
 
 		// If the user is not valid, return an error message
 		if (!isValid) {
 			return res.status(401).json({ message });
+		}
+
+		if (role !== req.body.role) {
+			return res.status(401).json({ message: 'Invalid role' });
 		}
 
 		// Respond with the JWT token and user information (without password)
@@ -89,7 +92,7 @@ const verifyEmail = async (req, res) => {
  * Controller to create a new user
  */
 const createUserController = async (req, res) => {
-	try {		
+	try {
 		const userResponse = await authService.createUserFromAdmin(req.body);
 		res.status(201).json({
 			message: 'User created successfully',
@@ -97,7 +100,10 @@ const createUserController = async (req, res) => {
 		});
 	} catch (error) {
 		console.error('Error creating user:', error);
-		res.status(500).json({ message: 'Failed to create user', error: error.message });
+		res.status(500).json({
+			message: 'Failed to create user',
+			error: error.message,
+		});
 	}
 };
 
