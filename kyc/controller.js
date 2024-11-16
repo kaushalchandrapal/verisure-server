@@ -105,4 +105,5 @@ const getUserKYCRequests = async (req, res) => {
 	}
 };
 
+
 module.exports = { createKYCRequest, getUserKYCDetails, getUserKYCRequests };

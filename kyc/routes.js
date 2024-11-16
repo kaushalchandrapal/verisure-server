@@ -58,4 +58,10 @@ router.post(
   kycRequestController.getUserKYCRequests
 );
 
+router.get(
+  'verify-ai/:id',
+  authMiddleware.auth,
+  roleMiddlewares.requirePermission(PERMISSIONS.VERIFY_KYC),
+);
+
 module.exports = router;
