@@ -130,28 +130,33 @@ router.post(
  * POST /api/auth/login
  */
 router.post(
-	'/login',
+	'/:role/login',
 	[
 		body('email')
 			.isEmail()
 			.withMessage('Please provide a valid email')
 			.normalizeEmail(),
 		body('password').not().isEmpty().withMessage('Password is required'),
-		body('role')
-			.not()
-			.isEmpty()
-			.withMessage('Role is required')
-			.custom(async (value) => {
-				const roleObjs = await roleServices.getAllRoles();
-				const roles = roleObjs.map((role) => role.name);
-				if (!roles.includes(value)) {
-					throw new Error(
-						`Role must be one of the following: ${roles.join(', ')}`
-					);
-				}
-				return true;
-			}),
+		// body('role')
+		// 	.not()
+		// 	.isEmpty()
+		// 	.withMessage('Role is required')
+		// 	.custom(async (value) => {
+		// 		const roleObjs = await roleServices.getAllRoles();
+		// 		const roles = roleObjs.map((role) => role.name);
+		// 		if (!roles.includes(value)) {
+		// 			throw new Error(
+		// 				`Role must be one of the following: ${roles.join(', ')}`
+		// 			);
+		// 		}
+		// 		return true;
+		// 	}),
 	],
+	(req, res, next) => {
+		req.body.role = req.params.role;
+		console.log("req.params.role",req.params.role)
+		next();
+	},
 	authController.login // Call the login controller function
 );
 

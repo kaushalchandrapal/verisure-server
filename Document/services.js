@@ -1,7 +1,10 @@
 // services/documentService.js
 
+const { z } = require('zod');
+const { zodResponseFormat } = require('openai/helpers/zod');
 const DOCUMENT_TYPES = require('../constants/documentTypes');
-const Document = require('../models/Document');
+const Document = require('./model');
+const OpenAI = require('openai');
 
 const DocumentFields = z.object({
 	name: z.boolean(),
@@ -9,6 +12,8 @@ const DocumentFields = z.object({
 	address: z.boolean(),
 	person_image: z.boolean(),
 	isTargetDocument: z.boolean(),
+	issueDate: z.boolean(),
+	expiryDate: z.boolean(),
 });
 
 /**
@@ -19,7 +24,7 @@ const DocumentFields = z.object({
  */
 const createDocument = async (documentType, documentLocation) => {
 	try {
-		if (!(documentType in DOCUMENT_TYPES)) {
+		if (!Object.values(DOCUMENT_TYPES).includes(documentType)) {
 			throw new Error('Invalid document type');
 		}
 
@@ -51,6 +56,10 @@ const createDocument = async (documentType, documentLocation) => {
  * @returns {Boolean} - Returns true if all documents pass validation, otherwise false
  */
 const validateDocumentWithAI = async (documentType, documents) => {
+	const openai = new OpenAI({
+		apiKey: process.env.OPENAI_API_KEY,
+	});
+
 	const promptDocuments = [];
 	documents.forEach((document_url) =>
 		promptDocuments.push({
@@ -62,34 +71,70 @@ const validateDocumentWithAI = async (documentType, documents) => {
 	// Loop through each document URL
 	try {
 		// Send request to OpenAI API for document analysis
-		const completion = await openai.beta.chat.completions.create({
+		const completion = await openai.beta.chat.completions.parse({
 			model: 'gpt-4o-2024-08-06',
 			messages: [
 				{
 					role: 'system',
-					content: `Analyze the given ${documentType} images to check for real data in the following fields: "name", "dob", "address", "person_image" and determine if it is a ${documentType}. For each field, return true if it contains actual data which is readable and not blurry or obscured. Return true for "isTargetDocument" if it is a ${documentType}, otherwise return false.`,
+					content: `Analyze the given ${documentType} images to check for real data in the following fields: "name", "dob", "address", "person_image", "issue_date", "expiry_date" (or similar terms such as "valid from," "valid till," etc.) and determine if it is a ${documentType}. For each field, return true if it contains actual data which is readable and not blurry or obscured, otherwise return false. Ensure that fields with synonymous terms are also recognized (e.g., "expiry date" could be labeled as "valid till"). Return true for "isTargetDocument" if it is a ${documentType}, otherwise return false.`,
 				},
 				{
 					role: 'user',
 					content: promptDocuments,
 				},
 			],
-			response_format: 'zod',
+			response_format: zodResponseFormat(
+				DocumentFields,
+				'field_analysis'
+			),
 		});
 
 		// Extract parsed response from the AI completion
 		const fieldAnalysis = completion.choices[0].message.parsed;
 
+		console.log('fieldAnalysis', fieldAnalysis);
 		// Validate that each required field in the response is true
-		const { name, dob, address, person_image, isTargetDocument } =
-			fieldAnalysis;
-		if (!(name && dob && address && person_image && isTargetDocument)) {
-			return false;
+		const {
+			name,
+			dob,
+			address,
+			person_image,
+			isTargetDocument,
+			issueDate,
+			expiryDate,
+		} = fieldAnalysis;
+		if (
+			!(
+				name &&
+				dob &&
+				address &&
+				person_image &&
+				isTargetDocument &&
+				issueDate &&
+				expiryDate
+			)
+		) {
+			let message = '';
+
+			if (!isTargetDocument)
+				message += 'The document is not a valid document.';
+			else {
+				message = 'These fields ';
+				if (!name) message += 'name, ';
+				if (!dob) message += 'date of birth, ';
+				if (!address) message += 'address, ';
+				if (!person_image) message += 'person image, ';
+				if (!issueDate) message += 'issue date, ';
+				if (!expiryDate) message += 'expiry date, ';
+				message += 'are missing or not readable in the document.';
+			}
+
+			return { status: false, message };
 		}
-		return true;
+		return { status: true, message: '' };
 	} catch (error) {
-		console.error(`Error validating document at ${documentUrl}:`, error);
-		return false; // Return false if there’s an error processing the document
+		console.error(`Error validating document`, error);
+		return { status: false, message: 'Something wrong' };
 	}
 };
 
