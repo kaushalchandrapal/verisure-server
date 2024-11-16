@@ -1,6 +1,8 @@
 const { validationResult } = require('express-validator');
 const kycRequestService = require('./services');
 const KYCRequest = require('./model');
+const documentServices = require('../Document/services');
+const awsServices = require('../Aws/services');
 
 const createKYCRequest = async (req, res) => {
 	const errors = validationResult(req);
@@ -10,19 +12,17 @@ const createKYCRequest = async (req, res) => {
 
 	try {
 		const userId = req.user.id;
-		const { status = 'Pending', assignerId, workerId } = req.body;
+		const { documentType, images } = req.body;
 
 		const activeRequest = await KYCRequest.findOne({
 			user_id: userId,
 			status: { $in: ['Pending', 'In Progress'] },
 		});
 		if (activeRequest) {
-			return res
-				.status(400)
-				.json({
-					message:
-						'You already have a KYC request in Pending or In Progress state.',
-				});
+			return res.status(400).json({
+				message:
+					'You already have a KYC request in Pending or In Progress state.',
+			});
 		}
 
 		const completedRequest = await KYCRequest.findOne({
@@ -32,19 +32,22 @@ const createKYCRequest = async (req, res) => {
 		});
 
 		if (completedRequest) {
-			return res
-				.status(400)
-				.json({
-					message:
-						'You cannot request a new KYC. Your previous KYC is still valid.',
-				});
+			return res.status(400).json({
+				message:
+					'You cannot request a new KYC. Your previous KYC is still valid.',
+			});
 		}
+
+		const documentPromises = images.map((image) =>
+			documentServices.createDocument(documentType, image)
+		);
+
+		const createdDocuments = await Promise.all(documentPromises);
+		const documentIds = createdDocuments.map((doc) => doc._id);
 
 		const newKYCRequest = await kycRequestService.createKYCRequest(
 			userId,
-			status,
-			assignerId,
-			workerId
+			documentIds
 		);
 
 		res.status(201).json({
@@ -105,5 +108,41 @@ const getUserKYCRequests = async (req, res) => {
 	}
 };
 
+const verifyDocumentsWithAI = async (req, res) => {
+	try {
+		const { kycId } = req.params;
 
-module.exports = { createKYCRequest, getUserKYCDetails, getUserKYCRequests };
+		// Fetch Documents
+		const documents = await kycRequestService.getDocumentsByKycId(kycId);
+
+		const documentType = documents[0]?.type;
+		const documentUrls = documents.map((doc) =>
+			awsServices.generateImageUrl(
+				process.env.AWS_BUCKET_NAME,
+				process.env.AWS_REGION,
+				doc.location
+			)
+		);
+
+		const { status, message } =
+			await documentServices.validateDocumentWithAI(
+				documentType,
+				documentUrls
+			);
+
+		res.status(200).json({ status, message });
+	} catch (error) {
+		console.log('Error verifying documents with AI:', error);
+		res.status(500).json({
+			message: 'Failed to verify documents with AI',
+			error,
+		});
+	}
+};
+
+module.exports = {
+	createKYCRequest,
+	getUserKYCDetails,
+	getUserKYCRequests,
+	verifyDocumentsWithAI,
+};
