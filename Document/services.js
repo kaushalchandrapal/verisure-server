@@ -57,7 +57,7 @@ const createDocument = async (documentType, documentLocation) => {
  */
 const validateDocumentWithAI = async (documentType, documents) => {
 	const openai = new OpenAI({
-		apiKey: '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',
+		apiKey: process.env.OPENAI_API_KEY,
 	});
 
 	const promptDocuments = [];
