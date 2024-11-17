@@ -91,6 +91,10 @@ const createUser = async (userData) => {
 			passwordHash: hashedPassword,
 			username: userData.username,
 			role: userData.role,
+			first_name: userData.firstName,
+			last_name: userData.lastName,
+			birthdate: userData.birthdate,
+			address: userData.address,
 		};
 
 		// Store the new user in the database using the user service

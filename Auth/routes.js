@@ -28,13 +28,13 @@ router.post(
 			.withMessage('Username is required')
 			.trim()
 			.escape(),
-		body('first_name')
+		body('firstName')
 			.not()
 			.isEmpty()
 			.withMessage('First name is required')
 			.trim()
 			.escape(),
-		body('last_name')
+		body('lastName')
 			.not()
 			.isEmpty()
 			.withMessage('Last name is required')
