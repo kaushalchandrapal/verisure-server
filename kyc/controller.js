@@ -2,7 +2,9 @@ const { validationResult } = require('express-validator');
 const kycRequestService = require('./services');
 const KYCRequest = require('./model');
 const documentServices = require('../Document/services');
+const kycServices = require('./services');
 const awsServices = require('../Aws/services');
+const userServices = require('../User/services');
 
 const createKYCRequest = async (req, res) => {
 	const errors = validationResult(req);
@@ -110,6 +112,11 @@ const getUserKYCRequests = async (req, res) => {
 
 const verifyDocumentsWithAI = async (req, res) => {
 	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
 		const { kycId } = req.params;
 
 		// Fetch Documents
@@ -140,9 +147,37 @@ const verifyDocumentsWithAI = async (req, res) => {
 	}
 };
 
+const assignCase = async (req, res) => {
+	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+		const { workerId, kycId } = req.body;
+		const supervisorId = req.user.id;
+
+		// Update the KYC request
+		await kycServices.assignCase(supervisorId, workerId, kycId);
+
+		// Assign the case to the worker and supervisor
+		await userServices.assignKycToUser(workerId, kycId);
+		await userServices.assignKycToUser(supervisorId, kycId);
+
+		res.status(200).json({ message: 'Case assigned successfully' });
+	} catch (error) {
+		console.log('Error assigning case:', error);
+		res.status(500).json({
+			message: 'Failed to assign case to worker',
+			error,
+		});
+	}
+};
+
 module.exports = {
 	createKYCRequest,
 	getUserKYCDetails,
 	getUserKYCRequests,
 	verifyDocumentsWithAI,
+	assignCase,
 };

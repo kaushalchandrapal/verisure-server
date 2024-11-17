@@ -57,6 +57,7 @@ const login = async (req, res) => {
 		// Respond with the JWT token and user information (without password)
 		return res.status(200).json({ isValid, token, message });
 	} catch (error) {
+		console.log('Error in login:', error);
 		return res.status(500).json({ error: 'Internal server error' });
 	}
 };

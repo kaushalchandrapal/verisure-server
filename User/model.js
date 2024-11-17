@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 		},
+		assigned_cases: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: 'KYCRequest',
+			},
+		],
 	},
 	{
 		// Add automatic timestamps to the schema

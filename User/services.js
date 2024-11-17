@@ -1,6 +1,7 @@
 const User = require('./model');
 const Role = require('../Role/model');
 const roleServices = require('../Role/services');
+const PERMISSIONS = require('../constants/permissions');
 
 /**
  * Function to create and store a new user in the database.
@@ -9,7 +10,7 @@ const roleServices = require('../Role/services');
  * @returns {Object} The newly created user document or an error if the process fails.
  */
 const createUser = async (userData) => {
-	try {		
+	try {
 		const role = await roleServices.getRoleByName(userData.role);
 		if (!role) {
 			throw new Error('Role does not exist');
@@ -66,6 +67,10 @@ const getUserByEmail = async (email) => {
 	try {
 		// Get user by email address and exclude the password hash
 		const user = await User.findOne({ email });
+
+		if (!user) {
+			return null;
+		}
 
 		// Return the user if found, otherwise return null
 		return user.toObject();
@@ -175,14 +180,16 @@ const getAllSupervisors = async () => {
 		if (!supervisorRole) throw new Error('Supervisor role not found');
 
 		// Find users with the Supervisor role
-		const supervisors = await User.find({ role: supervisorRole._id }).lean();
+		const supervisors = await User.find({
+			role: supervisorRole._id,
+		}).lean();
 
 		for (const supervisor of supervisors) {
 			supervisor.role = supervisorRole.name;
 			supervisor.permissions = supervisorRole.permissions;
 			delete supervisor.password_hash;
 		}
-		
+
 		return supervisors;
 	} catch (error) {
 		throw new Error(`Error retrieving supervisors: ${error.message}`);
@@ -210,7 +217,10 @@ const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
 			.lean();
 
 		for (const user of users) {
-			const role = user.role.toString() === supervisorRole._id.toString() ? supervisorRole : workerRole;
+			const role =
+				user.role.toString() === supervisorRole._id.toString()
+					? supervisorRole
+					: workerRole;
 			user.role = role.name;
 			user.permissions = role.permissions;
 			delete user.password_hash;
@@ -232,11 +242,61 @@ const getAllSupervisorsAndWorkers = async (page = 1, limit = 10) => {
 			hasPrevPage: page > 1,
 		};
 	} catch (error) {
-		throw new Error(`Error retrieving supervisors and workers: ${error.message}`);
+		throw new Error(
+			`Error retrieving supervisors and workers: ${error.message}`
+		);
 	}
 };
 
+/**
+ * Function to assign a KYC ID to a user by their unique ID.
+ *
+ * @param {String} userId - The unique ID of the user to update.
+ * @param {String} kycId - The KYC ID to assign to the user.
+ * @returns {Object|null} The updated user document if successful, or null if the user doesn't exist.
+ */
+const assignKycToUser = async (userId, kycId) => {
+	try {
+		if (!userId || !kycId) {
+			throw new Error('Both userId and kycId are required');
+		}
 
+		// Check if the user is worker or supervisor
+		const user = await User.findById(userId).populate('role');
+		if (!user) {
+			throw new Error('User not found');
+		}
+
+		// Check if the user is a worker or supervisor
+		if (
+			!(
+				user.role.permissions.includes(PERMISSIONS.ASSIGN_KYC) ||
+				user.role.permissions.includes(PERMISSIONS.VERIFY_KYC)
+			)
+		) {
+			throw new Error(
+				'User does not have permission to get assigned KYC'
+			);
+		}
+
+		// Update the user document with the provided kycId
+		const updatedUser = await User.findByIdAndUpdate(
+			userId,
+			{ $push: { assigned_cases: kycId } }, // Add the kycId to the assigned_cases array
+			{ new: true } // Return the updated document
+		).select('-password_hash'); // Exclude the password hash from the result
+
+		// If the user doesn't exist, return null
+		if (!updatedUser) {
+			throw new Error('User not found');
+		}
+
+		return updatedUser.toObject();
+	} catch (error) {
+		console.error('Error assigning KYC to user:', error);
+		throw new Error('Failed to assign KYC to user');
+	}
+};
 
 // Export all the functions so they can be used in other parts of the application
 module.exports = {
@@ -249,4 +309,5 @@ module.exports = {
 	getAllWorkers,
 	getAllSupervisors,
 	getAllSupervisorsAndWorkers,
+	assignKycToUser,
 };

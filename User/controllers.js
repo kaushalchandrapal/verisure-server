@@ -93,8 +93,9 @@ const getUserInformation = async (req, res) => {
 	}
 
 	try {
+		const userId = req.params.id || req.user.id;
 		// Check if a user exists with the provided username using the user service
-		const user = await userServices.getUserById(req.user.id);
+		const user = await userServices.getUserById(userId);
 		delete user?.password_hash;
 
 		if (user) {
@@ -110,7 +111,7 @@ const getUserInformation = async (req, res) => {
 			// If no user is found, respond with a 404 status code and a message
 			return res.status(404).json({
 				exists: false,
-				message: 'No user found with this username.',
+				message: 'No user found with this user id.',
 			});
 		}
 	} catch (error) {
@@ -189,34 +190,40 @@ const getAllSupervisors = async (req, res) => {
 };
 
 const getAllWorkersAndSupervisors = async (req, res) => {
-  // Validate the request data for errors (assuming express-validator is used)
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+	// Validate the request data for errors (assuming express-validator is used)
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
 
-  // Get page and limit from query parameters, with default values
-  const page = parseInt(req.body.page, 10) || 1;
-  const limit = parseInt(req.body.limit, 10) || 10;
+	// Get page and limit from query parameters, with default values
+	const page = parseInt(req.body.page, 10) || 1;
+	const limit = parseInt(req.body.limit, 10) || 10;
 
-  try {
-    // Retrieve workers and supervisors with pagination using the user service
-    const { users, totalUsers, totalPages, currentPage, hasNextPage, hasPrevPage, } = await userServices.getAllSupervisorsAndWorkers(page, limit);
-
-    return res.status(200).json({
-      workersAndSupervisors: users,
-      totalUsers,
-      totalPages,
-      currentPage,
+	try {
+		// Retrieve workers and supervisors with pagination using the user service
+		const {
+			users,
+			totalUsers,
+			totalPages,
+			currentPage,
 			hasNextPage,
 			hasPrevPage,
-    });
-  } catch (error) {
-    console.error('Error in getting workers and supervisors:', error);
-    return res.status(500).json({ error: 'Internal server error.' });
-  }
-};
+		} = await userServices.getAllSupervisorsAndWorkers(page, limit);
 
+		return res.status(200).json({
+			workersAndSupervisors: users,
+			totalUsers,
+			totalPages,
+			currentPage,
+			hasNextPage,
+			hasPrevPage,
+		});
+	} catch (error) {
+		console.error('Error in getting workers and supervisors:', error);
+		return res.status(500).json({ error: 'Internal server error.' });
+	}
+};
 
 module.exports = {
 	doesEmailExist,

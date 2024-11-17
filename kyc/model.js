@@ -6,6 +6,7 @@ const KYCRequestSchema = new mongoose.Schema(
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
 			required: true,
+			index: true
 		},
 		status: {
 			type: String,
@@ -22,10 +23,12 @@ const KYCRequestSchema = new mongoose.Schema(
 		assigner_id: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
+			index: true
 		},
 		worker_id: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
+			index: true
 		},
 		valid_until: {
 			type: Date,
