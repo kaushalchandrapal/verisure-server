@@ -71,4 +71,25 @@ router.post(
 	kycRequestController.verifyDocumentsWithAI
 );
 
+router.post(
+	'/assign',
+	authMiddleware.auth,
+	roleMiddlewares.requirePermission(PERMISSIONS.ASSIGN_KYC),
+	[
+		body('kycId')
+			.not()
+			.isEmpty()
+			.withMessage('KYC ID is required')
+			.isMongoId()
+			.withMessage('KYC ID must be a valid MongoDB ObjectId'),
+		body('workerId')
+			.not()
+			.isEmpty()
+			.withMessage('Worker ID is required')
+			.isMongoId()
+			.withMessage('Worker ID must be a valid MongoDB ObjectId'),
+	],
+	kycRequestController.assignCase
+);
+
 module.exports = router;

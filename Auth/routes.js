@@ -154,7 +154,6 @@ router.post(
 	],
 	(req, res, next) => {
 		req.body.role = req.params.role;
-		console.log("req.params.role",req.params.role)
 		next();
 	},
 	authController.login // Call the login controller function
