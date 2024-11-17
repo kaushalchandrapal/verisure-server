@@ -47,7 +47,14 @@ const createUser = async (userData) => {
 const getUserById = async (userId) => {
 	try {
 		// Get user by ID and exclude the password hash
-		const user = await User.findById(userId).populate('role');
+		const user = await User.findById(userId)
+			.populate('role')
+			.populate({
+				path: 'assigned_cases', // Populate the 'assigned_cases' field
+				populate: {
+					path: 'documents', // Populate the 'documents' field within 'assigned_cases'
+				},
+			});
 
 		// Return the user if found, otherwise return null
 		return user.toObject();
