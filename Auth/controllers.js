@@ -50,7 +50,14 @@ const login = async (req, res) => {
 			return res.status(401).json({ message });
 		}
 
-		if (role?.toLowerCase() !== req.body.role?.toLowerCase()) {
+		if (req.body?.role?.toLowerCase() === 'worker-supervisor') {
+			if (
+				role?.toLowerCase() !== 'supervisor' &&
+				role?.toLowerCase() !== 'worker'
+			) {
+				return res.status(401).json({ message: 'Invalid role' });
+			}
+		} else if (role?.toLowerCase() !== req.body.role?.toLowerCase()) {
 			return res.status(401).json({ message: 'Invalid role' });
 		}
 

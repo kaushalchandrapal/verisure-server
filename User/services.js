@@ -22,6 +22,10 @@ const createUser = async (userData) => {
 			password_hash: userData?.passwordHash, // Store the hashed password (should be pre-hashed)
 			username: userData?.username, // Store the user's username
 			role: role._id, // Store the user's role
+			first_name: userData?.firstName, // Store the user's first name
+			last_name: userData?.lastName, // Store the user's last name
+			birthdate: userData?.birthdate, // Store the user's birthdate
+			address: userData?.address, // Store the user's address
 		});
 
 		// Save the new user document to the database

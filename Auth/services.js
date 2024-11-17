@@ -91,8 +91,8 @@ const createUser = async (userData) => {
 			passwordHash: hashedPassword,
 			username: userData.username,
 			role: userData.role,
-			first_name: userData.firstName,
-			last_name: userData.lastName,
+			firstName: userData.firstName,
+			lastName: userData.lastName,
 			birthdate: userData.birthdate,
 			address: userData.address,
 		};
@@ -146,6 +146,8 @@ const validateUser = async (userData) => {
 			id: user._id,
 			email: user.email,
 			username: user.username,
+			firstName: user.first_name,
+			lastName: user.last_name,
 			role: roleOfUser?.name || 'Applicant',
 		});
 
