@@ -47,38 +47,6 @@ router.get(
  */
 router.get('/', authMiddleware.auth, userControllers.getUserInformation);
 
-router.get(
-	'/:id',
-	authMiddleware.auth,
-	roleMiddleware.requirePermission(PERMISSIONS.VERIFY_KYC),
-	[param('id').isMongoId().withMessage('Invalid ID format')],
-	async (req, res, next) => {
-		try {
-			const userId = req.user.id;
-			if (
-				(await kycServices.findCaseByWorkerAndUser(
-					userId,
-					req.params.id
-				)) ||
-				(await kycServices.findCaseBySupervisorAndUser(
-					userId,
-					req.params.id
-				))
-			) {
-				next();
-			} else {
-				res.status(403).json({
-					error: 'You do not have permission to access this resource',
-				});
-			}
-		} catch (error) {
-			console.error('Internal server error');
-			res.status(500).json({ error: 'Internal server error' });
-		}
-	},
-	userControllers.getUserInformation
-);
-
 /**
  * Route to check if a user exists by username
  * GET /api/user/workers
@@ -121,5 +89,41 @@ router.post(
 	requirePermission(PERMISSIONS.GET_SUPERVISORS),
 	userControllers.getAllWorkersAndSupervisors
 );
+
+router.get(
+	'/:id',
+	authMiddleware.auth,
+	roleMiddleware.requirePermission(PERMISSIONS.VERIFY_KYC),
+	[param('id').isMongoId().withMessage('Invalid ID format')],
+	async (req, res, next) => {
+		try {
+			const userId = req.user.id;
+			if (
+				(await kycServices.findCaseByWorkerAndUser(
+					userId,
+					req.params.id
+				)) ||
+				(await kycServices.findCaseBySupervisorAndUser(
+					userId,
+					req.params.id
+				))
+			) {
+				next();
+			} else {
+				res.status(403).json({
+					error: 'You do not have permission to access this resource',
+				});
+			}
+		} catch (error) {
+			console.error('Internal server error');
+			res.status(500).json({ error: 'Internal server error' });
+		}
+	},
+	userControllers.getUserInformation
+);
+
+
+
+
 
 module.exports = router;
