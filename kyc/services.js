@@ -1,6 +1,7 @@
 const KYCRequest = require('./model');
 const User = require('../User/model');
 const PERMISSIONS = require('../constants/permissions');
+const mongoose = require('mongoose');
 
 const createKYCRequest = async (
 	userId,
