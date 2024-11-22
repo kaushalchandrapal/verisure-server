@@ -92,4 +92,27 @@ router.post(
 	kycRequestController.assignCase
 );
 
+router.put(
+	'/status',
+	authMiddleware.auth,
+	roleMiddlewares.requirePermission(PERMISSIONS.VERIFY_KYC),
+	[
+		body('kycId')
+			.not()
+			.isEmpty()
+			.withMessage('KYC ID is required')
+			.isMongoId()
+			.withMessage('KYC ID must be a valid MongoDB ObjectId'),
+		body('status')
+			.not()
+			.isEmpty()
+			.withMessage('Status is required')
+			.isIn(['In Progress', 'Completed', 'Rejected'])
+			.withMessage(
+				'Status must be one of the allowed values: In Progress, Completed, Rejected'
+			),
+	],
+	kycRequestController.updateCaseStatus
+);
+
 module.exports = router;
