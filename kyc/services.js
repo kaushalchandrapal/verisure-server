@@ -255,8 +255,6 @@ const findCaseBySupervisorAndUser = async (assignerId, userId) => {
 	}
 };
 
-module.exports = findCaseBySupervisorAndUser;
-
 module.exports = {
 	createKYCRequest,
 	updateKYCRequestStatus,

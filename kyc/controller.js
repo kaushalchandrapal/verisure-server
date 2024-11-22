@@ -174,10 +174,34 @@ const assignCase = async (req, res) => {
 	}
 };
 
+const updateCaseStatus = async (req, res) => {
+	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+		const { kycId, status } = req.body;
+		const workerId = req.user.id;
+
+		// Update the KYC request
+		await kycServices.updateKYCRequestStatus(kycId, status);
+
+		res.status(200).json({ message: 'Case updated successfully' });
+	} catch (error) {
+		console.log('Error assigning case:', error);
+		res.status(500).json({
+			message: 'Failed to assign case to worker',
+			error,
+		});
+	}
+};
+
 module.exports = {
 	createKYCRequest,
 	getUserKYCDetails,
 	getUserKYCRequests,
 	verifyDocumentsWithAI,
 	assignCase,
+	updateCaseStatus,
 };
