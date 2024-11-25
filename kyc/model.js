@@ -6,11 +6,17 @@ const KYCRequestSchema = new mongoose.Schema(
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
 			required: true,
-			index: true
+			index: true,
 		},
 		status: {
 			type: String,
 			required: true,
+			enum: ['Pending', 'In Progress', 'Completed', 'Rejected'],
+		},
+		ai_status: {
+			type: String,
+			required: true,
+			default: 'Pending',
 			enum: ['Pending', 'In Progress', 'Completed', 'Rejected'],
 		},
 		documents: [
@@ -23,12 +29,12 @@ const KYCRequestSchema = new mongoose.Schema(
 		assigner_id: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
-			index: true
+			index: true,
 		},
 		worker_id: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
-			index: true
+			index: true,
 		},
 		valid_until: {
 			type: Date,

@@ -168,6 +168,13 @@ const verifyDocumentsWithAI = async (req, res) => {
 				documentUrls
 			);
 
+		if (!status) {
+			await kycServices.updateKYCRequestAiStatus(kycId, 'Rejected');
+			await kycServices.updateKYCRequestStatus(kycId, 'Rejected');
+		} else {
+			await kycServices.updateKYCRequestAiStatus(kycId, 'Completed');
+		}
+
 		res.status(200).json({ status, message });
 	} catch (error) {
 		console.log('Error verifying documents with AI:', error);
