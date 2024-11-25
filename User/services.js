@@ -55,9 +55,14 @@ const getUserById = async (userId) => {
 			.populate('role')
 			.populate({
 				path: 'assigned_cases', // Populate the 'assigned_cases' field
-				populate: {
-					path: 'documents', // Populate the 'documents' field within 'assigned_cases'
-				},
+				populate: [
+					{
+						path: 'documents', // Populate the 'documents' field within 'assigned_cases'
+					},
+					{
+						path: 'user_id',
+					},
+				],
 			});
 
 		// Return the user if found, otherwise return null
