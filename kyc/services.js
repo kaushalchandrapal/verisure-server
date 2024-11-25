@@ -25,6 +25,18 @@ const createKYCRequest = async (
 	}
 };
 
+const updateKYCRequestAiStatus = async (kycRequestId, newStatus) => {
+	const kycRequest = await KYCRequest.findById(kycRequestId);
+
+	if (!kycRequest) {
+		throw new Error('KYC Request not found');
+	}
+
+	kycRequest.ai_status = newStatus;
+
+	return await kycRequest.save();
+};
+
 const updateKYCRequestStatus = async (kycRequestId, newStatus) => {
 	const kycRequest = await KYCRequest.findById(kycRequestId);
 
@@ -131,7 +143,7 @@ const getAllKYCRequests = async ({
 		.limit(limitNumber);
 
 	const totalKYCRequests = await KYCRequest.countDocuments({});
-	
+
 	const totalPages = Math.ceil(totalKYCRequests / limitNumber);
 
 	return {
@@ -296,4 +308,5 @@ module.exports = {
 	findCaseByWorkerAndUser,
 	findCaseBySupervisorAndUser,
 	getAllKYCRequests,
+	updateKYCRequestAiStatus
 };
