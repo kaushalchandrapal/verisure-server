@@ -115,6 +115,37 @@ const getAllKYCRequestsForUser = async ({
 	};
 };
 
+const getAllKYCRequests = async ({
+	page = 1,
+	limit = 10,
+	sortBy = 'created_at',
+	order = 'asc',
+}) => {
+	const pageNumber = Math.max(parseInt(page, 10), 1);
+	const limitNumber = Math.max(parseInt(limit, 10), 1);
+	const sortOrder = order === 'asc' ? 1 : -1;
+
+	const kycDetails = await KYCRequest.find()
+		.sort({ [sortBy]: sortOrder })
+		.skip((pageNumber - 1) * limitNumber)
+		.limit(limitNumber);
+
+	const totalKYCRequests = await KYCRequest.countDocuments({});
+	
+	const totalPages = Math.ceil(totalKYCRequests / limitNumber);
+
+	return {
+		kycDetails,
+		pagination: {
+			total: totalKYCRequests,
+			totalPages,
+			currentPage: pageNumber,
+			hasNextPage: pageNumber < totalPages,
+			hasPrevPage: pageNumber > 1,
+		},
+	};
+};
+
 /**
  * Retrieves documents associated with a given kycId
  *
@@ -264,4 +295,5 @@ module.exports = {
 	assignCase,
 	findCaseByWorkerAndUser,
 	findCaseBySupervisorAndUser,
+	getAllKYCRequests,
 };

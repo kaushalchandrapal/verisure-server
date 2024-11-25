@@ -115,4 +115,11 @@ router.put(
 	kycRequestController.updateCaseStatus
 );
 
+router.post(
+	'/all',
+	authMiddleware.auth,
+	roleMiddlewares.requirePermission(PERMISSIONS.ASSIGN_KYC),
+	kycRequestController.getAllKYCRequests
+);
+
 module.exports = router;

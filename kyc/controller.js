@@ -110,6 +110,37 @@ const getUserKYCRequests = async (req, res) => {
 	}
 };
 
+const getAllKYCRequests = async (req, res) => {
+	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'created_at',
+			order = 'asc',
+		} = req.body;
+
+		const data = await kycRequestService.getAllKYCRequests({
+			page,
+			limit,
+			sortBy,
+			order,
+		});
+
+		res.status(200).json({ data });
+	} catch (error) {
+		console.log('Error getting all kyc requests:', error);
+		res.status(500).json({
+			message: 'Failed to get kyc requests',
+			error,
+		});
+	}
+};
+
 const verifyDocumentsWithAI = async (req, res) => {
 	try {
 		const errors = validationResult(req);
@@ -204,4 +235,5 @@ module.exports = {
 	verifyDocumentsWithAI,
 	assignCase,
 	updateCaseStatus,
+	getAllKYCRequests,
 };

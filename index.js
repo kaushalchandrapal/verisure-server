@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
 		app.listen(port, () => {
 			console.log(`Server is running at port ${port}`);
 
-			// addPermissions("Supervisor", [PERMISSIONS.ASSIGN_KYC])
+			// addPermissions("Supervisor", [PERMISSIONS.GET_WORKERS])
 		});
 	} catch (error) {
 		console.log(error);
