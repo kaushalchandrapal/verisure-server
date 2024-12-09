@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const awsServices = require('./services.js');
-const fileUtils = require('../utils/files.js');
+const fileUtils = require('../Utils/files.js');
 
 const getMultiplePresignedUrls = async (req, res) => {
 	const bucketName = process.env.AWS_BUCKET_NAME;
