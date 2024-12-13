@@ -8,6 +8,8 @@ const DOCUMENT_TYPES = require('../constants/documentTypes');
 
 const router = express.Router();
 
+router.get('/:kycId', kycRequestController.getKYC);
+
 // POST route for creating a new KYC request
 router.post(
 	'/create',
@@ -111,6 +113,10 @@ router.put(
 			.withMessage(
 				'Status must be one of the allowed values: In Progress, Completed, Rejected'
 			),
+		body('message')
+			.optional()
+			.isString()
+			.withMessage('Message must be a string'),
 	],
 	kycRequestController.updateCaseStatus
 );
@@ -121,5 +127,7 @@ router.post(
 	roleMiddlewares.requirePermission(PERMISSIONS.ASSIGN_KYC),
 	kycRequestController.getAllKYCRequests
 );
+
+router.get('/pdf/:kycId', kycRequestController.handlePDFDownload);
 
 module.exports = router;

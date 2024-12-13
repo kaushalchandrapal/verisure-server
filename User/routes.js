@@ -6,7 +6,6 @@ const authMiddleware = require('../Auth/middleware');
 const roleMiddleware = require('../Role/middleware');
 const { requirePermission } = require('../Role/middleware');
 const PERMISSIONS = require('../constants/permissions');
-const kycServices = require('../kyc/services');
 
 /**
  * Route to check if a user exists by email

@@ -36,6 +36,10 @@ const KYCRequestSchema = new mongoose.Schema(
 			ref: 'User',
 			index: true,
 		},
+		message: {
+			type: String,
+			default: "",
+		},
 		valid_until: {
 			type: Date,
 			default: null, // Set when status is marked as "Completed"

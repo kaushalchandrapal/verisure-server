@@ -1,7 +1,10 @@
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
 const KYCRequest = require('./model');
 const User = require('../User/model');
 const PERMISSIONS = require('../constants/permissions');
 const mongoose = require('mongoose');
+const userServices = require('../User/services');
 
 const createKYCRequest = async (
 	userId,
@@ -25,7 +28,11 @@ const createKYCRequest = async (
 	}
 };
 
-const updateKYCRequestAiStatus = async (kycRequestId, newStatus) => {
+const updateKYCRequestAiStatus = async (
+	kycRequestId,
+	newStatus,
+	message = ''
+) => {
 	const kycRequest = await KYCRequest.findById(kycRequestId);
 
 	if (!kycRequest) {
@@ -33,11 +40,16 @@ const updateKYCRequestAiStatus = async (kycRequestId, newStatus) => {
 	}
 
 	kycRequest.ai_status = newStatus;
+	kycRequest.message = message;
 
 	return await kycRequest.save();
 };
 
-const updateKYCRequestStatus = async (kycRequestId, newStatus) => {
+const updateKYCRequestStatus = async (
+	kycRequestId,
+	newStatus,
+	message = ''
+) => {
 	const kycRequest = await KYCRequest.findById(kycRequestId);
 
 	if (!kycRequest) {
@@ -45,6 +57,7 @@ const updateKYCRequestStatus = async (kycRequestId, newStatus) => {
 	}
 
 	kycRequest.status = newStatus;
+	kycRequest.message = message;
 
 	if (newStatus === 'Completed') {
 		kycRequest.valid_until = new Date(
@@ -235,9 +248,7 @@ const assignCase = async (supervisorId, workerId, kycId) => {
 			{ new: true } // Return the updated document
 		);
 
-		updatedCase = await updateKYCRequestStatus(kycId, 'In Progress', {
-			new: true,
-		});
+		updatedCase = await updateKYCRequestStatus(kycId, 'In Progress');
 
 		return updatedCase.toObject();
 	} catch (error) {
@@ -298,6 +309,163 @@ const findCaseBySupervisorAndUser = async (assignerId, userId) => {
 	}
 };
 
+const getKycById = async (kycId) => {
+	try {
+		const kycRequest = await KYCRequest.findById(kycId)
+			.populate('documents')
+			.populate('user_id')
+			.lean();
+		kycRequest['user'] = kycRequest['user_id'];
+		delete kycRequest['user_id'];
+		delete kycRequest['user']['password_hash'];
+
+		if (!kycRequest) {
+			throw new Error('KYC Request not found');
+		}
+		return kycRequest;
+	} catch (error) {
+		console.error('Error finding case by supervisor and user:', error);
+		throw new Error('Failed to find case');
+	}
+};
+
+const generatePdfApiJwt = (apiKey, workspaceIdentifier, secret) => {
+	if (!apiKey || !workspaceIdentifier || !secret) {
+		throw new Error(
+			'API key, workspace identifier, and secret are required'
+		);
+	}
+
+	// Define the header
+	const header = {
+		alg: 'HS256',
+		typ: 'JWT',
+	};
+
+	// Define the payload
+	const payload = {
+		iss: apiKey,
+		sub: workspaceIdentifier,
+		exp: Math.floor(Date.now() / 1000) + 60, // Token expires in 60 seconds
+	};
+
+	// Sign the token
+	const token = jwt.sign(payload, secret, { header });
+
+	return token;
+};
+
+/**
+ * Generates a PDF for the given KYC ID.
+ *
+ * @param {String} kycId - The ID of the KYC request.
+ * @returns {Object} The generated PDF URL and metadata.
+ */
+const generatePDF = async (kycId) => {
+	try {
+		// Fetch KYC details by ID
+		const kycRequest = await getKycById(kycId);
+
+		if (!kycRequest) {
+			throw new Error('KYC Request not found');
+		}
+
+		const user = kycRequest.user;
+
+		// Prepare data for the PDF
+		const pdfData = {
+			template: {
+				id: '1280135', // Replace with your actual template ID
+				data: {
+					name: user.first_name + ' ' + user.last_name, // Customize this based on your template data requirements
+					date: new Date().toLocaleDateString(),
+					email: user.email,
+					address: user.address,
+					message: kycRequest.message,
+					status:
+						kycRequest.status === 'Completed'
+							? 'Approved'
+							: kycRequest.status,
+					stamp:
+						kycRequest.status === 'Completed'
+							? 'https://verisure-project.s3.us-east-2.amazonaws.com/approve.png'
+							: 'https://verisure-project.s3.us-east-2.amazonaws.com/reject.png',
+				},
+			},
+			format: 'pdf',
+			output: 'url',
+			name: `KYC_${kycId}_Certificate`,
+		};
+
+		// Make the request to the PDF Generator API
+		const response = await axios.post(
+			'https://us1.pdfgeneratorapi.com/api/v4/documents/generate',
+			pdfData,
+			{
+				headers: {
+					Authorization: `Bearer ${await generatePdfApiJwt(
+						'640b88759438a1d5b820498a23338bd0e07e890381f3b48c5a8afa3b9aea1017',
+						'pniravc36@gmail.com',
+						'4fee1d58674d54444689ed0bdad8941519660acf9237c7d5391c7be84b1b0ea7'
+					)}`,
+					'Content-Type': 'application/json',
+				},
+			}
+		);
+
+		// Return the response
+		const pdfUrl = response.data.response; // Extract the URL
+		const meta = response.data.meta; // Extract metadata
+
+		return { pdfUrl, meta };
+	} catch (error) {
+		console.error('Error generating PDF:', error);
+		throw new Error('Failed to generate PDF');
+	}
+};
+
+/**
+ * Function to get counts of KYC requests by status.
+ *
+ * @returns {Object} An object containing the counts of total KYC requests and counts by status.
+ */
+const getKycCounts = async () => {
+	try {
+		// Aggregate counts of KYC requests grouped by status
+		const countsByStatus = await KYCRequest.aggregate([
+			{
+				$group: {
+					_id: '$status', // Group by status
+					count: { $sum: 1 }, // Count the number of documents for each status
+				},
+			},
+		]);
+
+		// Initialize counts object
+		const counts = {
+			totalKycRequests: 0,
+			Pending: 0,
+			'In Progress': 0,
+			Completed: 0,
+			Rejected: 0,
+		};
+
+		// Calculate total and populate status-specific counts
+		countsByStatus.forEach((statusGroup) => {
+			const { _id: status, count } = statusGroup;
+			counts[status] = count;
+			counts.totalKycRequests += count;
+		});
+
+		console.log('counts', counts);
+
+		return counts;
+	} catch (error) {
+		console.error('Error fetching KYC counts:', error);
+		throw new Error('Failed to fetch KYC counts');
+	}
+};
+
 module.exports = {
 	createKYCRequest,
 	updateKYCRequestStatus,
@@ -308,5 +476,8 @@ module.exports = {
 	findCaseByWorkerAndUser,
 	findCaseBySupervisorAndUser,
 	getAllKYCRequests,
-	updateKYCRequestAiStatus
+	updateKYCRequestAiStatus,
+	getKycById,
+	generatePDF,
+	getKycCounts,
 };

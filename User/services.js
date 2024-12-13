@@ -314,6 +314,50 @@ const assignKycToUser = async (userId, kycId) => {
 	}
 };
 
+/**
+ * Function to count total users and users by their roles.
+ *
+ * @returns {Object} An object containing the counts of total users and counts for each role.
+ */
+const getUserCounts = async () => {
+	try {
+		// Fetch all roles
+		const roles = await roleServices.getAllRoles();
+
+		// Map roles to their names and IDs for easier reference
+		const roleMap = roles.reduce((acc, role) => {
+			acc[role.name] = role._id.toString();
+			return acc;
+		}, {});
+
+		// Initialize the counts object
+		const counts = {
+			totalUsers: 0,
+			Applicant: 0,
+			Supervisor: 0,
+			Admin: 0,
+			Worker: 0,
+		};
+
+		// Count total users
+		counts.totalUsers = await User.countDocuments();
+
+		// Count users by each role
+		for (const roleName in roleMap) {
+			counts[roleName] = await User.countDocuments({
+				role: roleMap[roleName],
+			});
+		}
+
+		console.log("counts",counts)
+
+		return counts;
+	} catch (error) {
+		console.error('Error fetching user counts:', error);
+		throw new Error('Failed to fetch user counts');
+	}
+};
+
 // Export all the functions so they can be used in other parts of the application
 module.exports = {
 	createUser,
@@ -326,4 +370,5 @@ module.exports = {
 	getAllSupervisors,
 	getAllSupervisorsAndWorkers,
 	assignKycToUser,
+	getUserCounts,
 };

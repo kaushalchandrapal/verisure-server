@@ -1,10 +1,10 @@
+const axios = require('axios');
 const { validationResult } = require('express-validator');
-const kycRequestService = require('./services');
 const KYCRequest = require('./model');
 const documentServices = require('../Document/services');
-const kycServices = require('./services');
 const awsServices = require('../Aws/services');
 const userServices = require('../User/services');
+const kycServices = require('./services');
 
 const createKYCRequest = async (req, res) => {
 	const errors = validationResult(req);
@@ -47,7 +47,7 @@ const createKYCRequest = async (req, res) => {
 		const createdDocuments = await Promise.all(documentPromises);
 		const documentIds = createdDocuments.map((doc) => doc._id);
 
-		const newKYCRequest = await kycRequestService.createKYCRequest(
+		const newKYCRequest = await kycServices.createKYCRequest(
 			userId,
 			documentIds
 		);
@@ -67,9 +67,7 @@ const createKYCRequest = async (req, res) => {
 const getUserKYCDetails = async (req, res) => {
 	const userId = req.user.id;
 	try {
-		const counts = await kycRequestService.detailsUserKYCRequestsByStatus(
-			userId
-		);
+		const counts = await kycServices.detailsUserKYCRequestsByStatus(userId);
 		res.status(200).json({
 			counts: counts.countsByStatus,
 			allKYCRequests: counts.allKYCRequests,
@@ -93,7 +91,7 @@ const getUserKYCRequests = async (req, res) => {
 			order = 'asc',
 		} = req.body;
 
-		const data = await kycRequestService.getAllKYCRequestsForUser({
+		const data = await kycServices.getAllKYCRequestsForUser({
 			userId,
 			page,
 			limit,
@@ -124,7 +122,7 @@ const getAllKYCRequests = async (req, res) => {
 			order = 'asc',
 		} = req.body;
 
-		const data = await kycRequestService.getAllKYCRequests({
+		const data = await kycServices.getAllKYCRequests({
 			page,
 			limit,
 			sortBy,
@@ -151,7 +149,7 @@ const verifyDocumentsWithAI = async (req, res) => {
 		const { kycId } = req.params;
 
 		// Fetch Documents
-		const documents = await kycRequestService.getDocumentsByKycId(kycId);
+		const documents = await kycServices.getDocumentsByKycId(kycId);
 
 		const documentType = documents[0]?.type;
 		const documentUrls = documents.map((doc) =>
@@ -169,8 +167,16 @@ const verifyDocumentsWithAI = async (req, res) => {
 			);
 
 		if (!status) {
-			await kycServices.updateKYCRequestAiStatus(kycId, 'Rejected');
-			await kycServices.updateKYCRequestStatus(kycId, 'Rejected');
+			await kycServices.updateKYCRequestAiStatus(
+				kycId,
+				'Rejected',
+				message
+			);
+			await kycServices.updateKYCRequestStatus(
+				kycId,
+				'Rejected',
+				message
+			);
 		} else {
 			await kycServices.updateKYCRequestAiStatus(kycId, 'Completed');
 		}
@@ -219,17 +225,83 @@ const updateCaseStatus = async (req, res) => {
 			return res.status(400).json({ errors: errors.array() });
 		}
 
-		const { kycId, status } = req.body;
+		const { kycId, status, message } = req.body;
 		const workerId = req.user.id;
 
 		// Update the KYC request
-		await kycServices.updateKYCRequestStatus(kycId, status);
+		await kycServices.updateKYCRequestStatus(kycId, status, message);
 
 		res.status(200).json({ message: 'Case updated successfully' });
 	} catch (error) {
 		console.log('Error assigning case:', error);
 		res.status(500).json({
 			message: 'Failed to assign case to worker',
+			error,
+		});
+	}
+};
+
+const handlePDFDownload = async (req, res) => {
+	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+		const { kycId } = req.params;
+		// const userId = req.user.id;
+
+		const pdfData = await kycServices.generatePDF(kycId);
+
+		// res.setHeader('Content-Disposition', 'attachment; filename="file.pdf"');
+		// res.setHeader('Content-Type', 'application/pdf');
+		// res.sendFile(pdfData.pdfUrl);
+
+		// res.status(200).json({ data: pdfData });
+
+		// Fetch the PDF file from the URL
+		// const response = await axios.get(pdfData.pdfUrl, {
+		// 	responseType: 'stream', // Ensure the response is a stream
+		// });
+
+		// Set a temporary filename for the file
+		const response = await axios.get(pdfData.pdfUrl, {
+			responseType: 'arraybuffer', // Fetch as binary data
+		});
+
+		// Set headers to indicate a file attachment
+		res.setHeader(
+			'Content-Disposition',
+			'attachment; filename="report.pdf"'
+		);
+		res.setHeader('Content-Type', 'application/pdf');
+		res.status(200).send(response.data);
+	} catch (error) {
+		console.log('Error generating pdf:', error);
+		res.status(500).json({
+			message: 'Failed to Generate pdf',
+			error,
+		});
+	}
+};
+
+const getKYC = async (req, res) => {
+	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+		const { kycId } = req.params;
+		// const userId = req.user.id;
+
+		const kycData = await kycServices.getKycById(kycId);
+
+		res.status(200).json({ data: kycData });
+	} catch (error) {
+		console.log('Error generating pdf:', error);
+		res.status(500).json({
+			message: 'Failed to Generate pdf',
 			error,
 		});
 	}
@@ -243,4 +315,6 @@ module.exports = {
 	assignCase,
 	updateCaseStatus,
 	getAllKYCRequests,
+	handlePDFDownload,
+	getKYC,
 };

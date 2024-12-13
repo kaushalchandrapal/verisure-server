@@ -7,6 +7,7 @@ const PERMISSIONS = {
 	VIEW_ROLES: 'view_roles',
 	VERIFY_KYC: 'verify_kyc',
 	ASSIGN_KYC: 'assign_kyc',
+	GET_ANALYTICS: 'get_analytics',
 };
 
 module.exports = PERMISSIONS;
