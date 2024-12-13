@@ -20,7 +20,7 @@ const signup = async (req, res) => {
 		});
 
 		// Send a verification email
-		await authService.sendEmailVerificationEmail(newUser._id);
+		// await authService.sendEmailVerificationEmail(newUser._id);
 
 		return res.status(201).json(newUser);
 	} catch (error) {

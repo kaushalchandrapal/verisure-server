@@ -5,8 +5,9 @@ const dbHelper = require('./db/connect');
 const userRoutes = require('./User/routes');
 const authRoutes = require('./Auth/routes');
 const rolesRoutes = require('./Role/routes');
-const kycRoutes = require('./kyc/routes');
+const kycRoutes = require('./Kyc/routes');
 const awsRoutes = require('./Aws/routes');
+const adminRouters = require('./Admin/routes');
 const { addPermissions } = require('./Role/services');
 const PERMISSIONS = require('./constants/permissions');
 const port = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/role', rolesRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/aws', awsRoutes);
+app.use('/api/admin', adminRouters);
 
 app.get('/', (req, res) => {
 	res.send({ message: 'Hello API' });
@@ -33,7 +35,7 @@ app.get('/', (req, res) => {
 		app.listen(port, () => {
 			console.log(`Server is running at port ${port}`);
 
-			// addPermissions("Supervisor", [PERMISSIONS.GET_WORKERS])
+			// addPermissions("Admin", [PERMISSIONS.GET_ANALYTICS])
 		});
 	} catch (error) {
 		console.log(error);
