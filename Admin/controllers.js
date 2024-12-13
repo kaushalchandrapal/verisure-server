@@ -1,5 +1,5 @@
 const userServices = require('../User/services');
-const kycServices = require('../Kyc/services');
+const kycServices = require('../kyc/services');
 
 /**
  * Controller to get combined counts for users and KYC requests.
