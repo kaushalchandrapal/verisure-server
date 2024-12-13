@@ -242,47 +242,33 @@ const updateCaseStatus = async (req, res) => {
 };
 
 const handlePDFDownload = async (req, res) => {
-	try {
-		const errors = validationResult(req);
-		if (!errors.isEmpty()) {
-			return res.status(400).json({ errors: errors.array() });
-		}
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-		const { kycId } = req.params;
-		// const userId = req.user.id;
+    const { kycId } = req.params;
+    const pdfData = await kycServices.generatePDF(kycId);
 
-		const pdfData = await kycServices.generatePDF(kycId);
+    const response = await axios.get(pdfData.pdfUrl, {
+      responseType: 'arraybuffer',
+    });
 
-		// res.setHeader('Content-Disposition', 'attachment; filename="file.pdf"');
-		// res.setHeader('Content-Type', 'application/pdf');
-		// res.sendFile(pdfData.pdfUrl);
+    // Generate a dynamic filename without underscores at the start and end
+    const fileName = `KYC_Report_${kycId}.pdf`; // Ensure filename has no undesired characters
 
-		// res.status(200).json({ data: pdfData });
-
-		// Fetch the PDF file from the URL
-		// const response = await axios.get(pdfData.pdfUrl, {
-		// 	responseType: 'stream', // Ensure the response is a stream
-		// });
-
-		// Set a temporary filename for the file
-		const response = await axios.get(pdfData.pdfUrl, {
-			responseType: 'arraybuffer', // Fetch as binary data
-		});
-
-		// Set headers to indicate a file attachment
-		res.setHeader(
-			'Content-Disposition',
-			'attachment; filename="report.pdf"'
-		);
-		res.setHeader('Content-Type', 'application/pdf');
-		res.status(200).send(response.data);
-	} catch (error) {
-		console.log('Error generating pdf:', error);
-		res.status(500).json({
-			message: 'Failed to Generate pdf',
-			error,
-		});
-	}
+    // Set headers to indicate a file attachment with a clean filename
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.status(200).send(response.data);
+  } catch (error) {
+    console.log('Error generating pdf:', error);
+    res.status(500).json({
+      message: 'Failed to Generate pdf',
+      error,
+    });
+  }
 };
 
 const getKYC = async (req, res) => {
